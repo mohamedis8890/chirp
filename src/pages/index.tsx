@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Head from "next/head";
 import Image from "next/image";
+import { useState } from "react";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 
 import { api } from "~/utils/api";
@@ -12,7 +13,18 @@ dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const [input, setInput] = useState("");
+
   if (!user) return null;
+
+  const ctx = api.useContext();
+
+  const { mutate, isPending: isPosting } = api.post.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.post.invalidate();
+    },
+  });
 
   return (
     <div className="flex w-full gap-4">
@@ -26,7 +38,13 @@ const CreatePostWizard = () => {
       <input
         placeholder="Type Some Emojis..."
         className="w-full grow bg-transparent outline-none"
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
       />
+      <button onClick={() => mutate({ content: input })} disabled={isPosting}>
+        Post
+      </button>
     </div>
   );
 };
