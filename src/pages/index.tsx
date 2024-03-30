@@ -4,6 +4,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import Head from "next/head";
 import Image from "next/image";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 
 import { api } from "~/utils/api";
@@ -24,6 +25,11 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.post.invalidate();
     },
+    onError: (err) => {
+      const message = err.data?.zodError?.fieldErrors.content;
+      if (message?.[0]) toast.error(message[0]);
+      else toast.error("Unable to post now, please try agian later");
+    },
   });
 
   return (
@@ -41,10 +47,22 @@ const CreatePostWizard = () => {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (input !== "") mutate({ content: input });
+          }
+        }}
       />
-      <button onClick={() => mutate({ content: input })} disabled={isPosting}>
-        Post
-      </button>
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })} disabled={isPosting}>
+          Post
+        </button>
+      )}
+      {isPosting && (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={20} />
+        </div>
+      )}
     </div>
   );
 };
