@@ -11,6 +11,7 @@ import {
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
 import { filterUserForClient } from "~/server/helpers/filterUserForClient";
+import type { Post } from "@prisma/client";
 
 // Create a new ratelimiter, that allows 5 requests per 1 min
 const ratelimit = new Ratelimit({
@@ -25,32 +26,35 @@ const ratelimit = new Ratelimit({
   prefix: "@upstash/ratelimit",
 });
 
+const addUserDataToPosts = async (posts: Post[]) => {
+  const users = (
+    await clerkClient.users.getUserList({
+      userId: posts.map((post) => post.authorId),
+      limit: 100,
+    })
+  ).map(filterUserForClient);
+
+  return posts.map((post) => {
+    const author = users.find((user) => user.id === post.authorId);
+    if (!author)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Author not found",
+      });
+    return {
+      post,
+      author,
+    };
+  });
+};
+
 export const postRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.db.post.findMany({
       take: 100,
       orderBy: { createdAt: "desc" },
     });
-
-    const users = (
-      await clerkClient.users.getUserList({
-        userId: posts.map((post) => post.authorId),
-        limit: 100,
-      })
-    ).map(filterUserForClient);
-
-    return posts.map((post) => {
-      const author = users.find((user) => user.id === post.authorId);
-      if (!author)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Author not found",
-        });
-      return {
-        post,
-        author,
-      };
-    });
+    return await addUserDataToPosts(posts);
   }),
 
   getLatest: publicProcedure.query(({ ctx }) => {
@@ -58,6 +62,21 @@ export const postRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
   }),
+
+  getPostsByUserId: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [user] = await clerkClient.users.getUserList({
+        username: [input.userId],
+      });
+      const authorId = user?.id;
+      const posts = await ctx.db.post.findMany({
+        take: 100,
+        where: { authorId },
+        orderBy: { createdAt: "desc" },
+      });
+      return await addUserDataToPosts(posts);
+    }),
 
   create: privateProcedure
     .input(
