@@ -32,7 +32,10 @@ jobs:
         run: npm install prisma --save-dev
 
       - name: Run TypeScript type checking
-        run: npm run type-check
+        run: npm run typecheck
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Print Environment Variable
+        run: echo $MY_ENV_VAR
