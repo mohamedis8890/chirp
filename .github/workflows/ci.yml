@@ -8,13 +8,13 @@ on:
     branches:
       - main
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
   env:
     DATABASE_URL: "https://fakedb.com"
     NODE_ENV: production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
