@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: "14"
 
+      - name: Install Prisma CLI
+        run: npm add -D prisma
+
       - name: Install dependencies
         run: npm install
 
