@@ -31,8 +31,10 @@ jobs:
       - name: Install Prisma CLI
         run: npm install prisma --save-dev
 
-      - name: Run TypeScript type checking
-        run: npm run typecheck
+      - name: TSC actions
+        # You may pin to the exact commit or the version.
+        # uses: stepek/tsc-action@512d9cc82fcff4da48a6339d3b2a57852fafc8cb
+        uses: stepek/tsc-action@1.0.0
 
       - name: Run ESLint
         run: npm run lint
