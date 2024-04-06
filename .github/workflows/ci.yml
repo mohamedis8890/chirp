@@ -23,13 +23,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "14"
-
-      - name: Install Prisma CLI
-        run: npm add -D prisma
-
+          node-version: "16"
+        
       - name: Install dependencies
         run: npm install
+
+      - name: Install Prisma CLI
+        run: npm install prisma --save-dev
 
       - name: Run TypeScript type checking
         run: npm run type-check
